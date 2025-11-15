@@ -1,10 +1,48 @@
 import { DiVisualstudio } from "react-icons/di";
 import AppCard from "../ui/AppCard";
 
-import { useLoaderData } from "react-router";
+import { useEffect, useState } from "react";
 
 const AllAppsPage = () => {
-  const apps = useLoaderData();
+  const [apps, setApps] = useState([]);
+  const [totalApps, setTotalApps] = useState(0);
+  const [totalPage, setTotalPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [sort, setSort] = useState("size");
+  const [order, setOrder] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const limit = 10;
+  useEffect(() => {
+    fetch(
+      `http://localhost:5000/apps?limit=${limit}&skip=${
+        currentPage * limit
+      }&sort=${sort}&order=${order}&search=${searchText}`,
+      {}
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        console.log(data.apps);
+        setApps(data.apps);
+        setTotalApps(data.total);
+        const page = Math.ceil(data.total / limit);
+        console.log(page);
+        setTotalPage(page);
+      });
+  }, [currentPage, sort, order, searchText]);
+
+  const handdelSelect = (e) => {
+    console.log(e.target.value);
+    const sortText = e.target.value;
+    setSort(sortText.split("_")[0]);
+    setOrder(sortText.split("_")[1]);
+  };
+
+  const handdleSearchText = (e) => {
+    console.log(e.target.value);
+    setSearchText(e.target.value);
+  };
+
+  // const apps = useLoaderData();
   return (
     <div>
       <title>All Apps | Hero Apps</title>
@@ -22,7 +60,7 @@ const AllAppsPage = () => {
       <div className="w-11/12 mx-auto flex flex-col-reverse lg:flex-row gap-5 items-start justify-between lg:items-end mt-10">
         <div>
           <h2 className="text-lg underline font-bold">
-            ({apps.length}) Apps Found
+            ({totalApps}) Apps Found
           </h2>
         </div>
 
@@ -44,12 +82,17 @@ const AllAppsPage = () => {
                 <path d="m21 21-4.3-4.3"></path>
               </g>
             </svg>
-            <input type="search" className="" placeholder="Search Apps" />
+            <input
+              onChange={handdleSearchText}
+              type="search"
+              className=""
+              placeholder="Search Apps"
+            />
           </label>
         </form>
 
         <div className="">
-          <select className="select bg-white">
+          <select onChange={handdelSelect} className="select bg-white">
             <option selected disabled={true}>
               Sort by <span className="text-xs">R / S / D</span>
             </option>
@@ -74,10 +117,38 @@ const AllAppsPage = () => {
               <button className="btn btn-primary">Show All Apps</button>
             </div>
           ) : (
-            apps.map((app) => <AppCard key={app.id} app={app}></AppCard>)
+            apps.map((app) => <AppCard key={app._id} app={app}></AppCard>)
           )}
         </div>
       </>
+      <div className="flex  justify-center items-center felx-wrap gap-3 my-10">
+        {currentPage > 0 && (
+          <button
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="btn-primary"
+          >
+            Prev
+          </button>
+        )}
+
+        {[...Array(totalPage).keys()].map((i) => (
+          <button
+            onClick={() => setCurrentPage(i)}
+            className={`btn ${i === currentPage && "btn-primary"}`}
+          >
+            {i + 1}
+          </button>
+        ))}
+
+        {currentPage < totalPage - 1 && (
+          <button
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="btn-primary"
+          >
+            Next
+          </button>
+        )}
+      </div>
     </div>
   );
 };
